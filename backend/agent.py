@@ -8,7 +8,7 @@ from langgraph.prebuilt import create_react_agent
 load_dotenv()
 
 # 1. Connect to our local SQLite database
-db = SQLDatabase.from_uri("sqlite:///./finance.db")
+db = SQLDatabase.from_uri(os.getenv("DATABASE_URL"))
 
 # 2. Initialize the OpenAI language model
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
