@@ -1,121 +1,94 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import './App.css'
+import ChatWidget from './ChatWidget'
+
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [summary, setSummary] = useState({ balance: 0, total_income: 0, total_expense: 0 })
+  const [transactions, setTransactions] = useState([])
+
+  useEffect(() => {
+    // Fetch data from our FastAPI backend
+    axios.get('http://localhost:8000/api/summary')
+      .then(res => setSummary(res.data))
+      .catch(err => console.error(err));
+
+    axios.get('http://localhost:8000/api/transactions')
+      .then(res => setTransactions(res.data))
+      .catch(err => console.error(err));
+  }, [])
+
+  // Process data for the Recharts Pie Chart
+  const expenses = transactions.filter(t => t.type === 'expense');
+  const chartData = expenses.reduce((acc, curr) => {
+    const existing = acc.find(item => item.name === curr.category);
+    if (existing) existing.value += curr.amount;
+    else acc.push({ name: curr.category, value: curr.amount });
+    return acc;
+  }, []);
+
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="dashboard-container">
+      <header>
+        <h1>Intuit Financial Hub</h1>
+        <p>AI-Powered Personal Finance Dashboard</p>
+      </header>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <div className="summary-grid">
+        <div className="glass-card summary-card">
+          <h3>Total Balance</h3>
+          <p>${summary.balance.toFixed(2)}</p>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+        <div className="glass-card summary-card">
+          <h3>Income (90 Days)</h3>
+          <p className="text-success">+${summary.total_income.toFixed(2)}</p>
         </div>
-      </section>
+        <div className="glass-card summary-card">
+          <h3>Expenses (90 Days)</h3>
+          <p className="text-danger">-${summary.total_expense.toFixed(2)}</p>
+        </div>
+      </div>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <div className="main-grid">
+        <div className="glass-card">
+          <h3 style={{marginTop: 0}}>Recent Transactions</h3>
+          <div className="transaction-list">
+            {transactions.slice(0, 10).map((tx) => (
+              <div className="transaction-item" key={tx.id}>
+                <div className="tx-info">
+                  <h4>{tx.description}</h4>
+                  <p>{tx.date} • {tx.category}</p>
+                </div>
+                <div className={`tx-amount ${tx.type === 'income' ? 'text-success' : ''}`}>
+                  {tx.type === 'income' ? '+' : '-'}${tx.amount.toFixed(2)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="glass-card">
+          <h3 style={{marginTop: 0}}>Spending Breakdown</h3>
+          <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie data={chartData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+	  <ChatWidget />
+    </div>
   )
 }
 
