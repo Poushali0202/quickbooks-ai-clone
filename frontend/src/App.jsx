@@ -11,11 +11,11 @@ function App() {
 
   useEffect(() => {
     // Fetch data from our FastAPI backend
-    axios.get('http://localhost:8000/api/summary')
+    axios.get('https://quickbooks-ai-clone.onrender.com/api/summary')
       .then(res => setSummary(res.data))
       .catch(err => console.error(err));
 
-    axios.get('http://localhost:8000/api/transactions')
+    axios.get('https://quickbooks-ai-clone.onrender.com/api/transactions')
       .then(res => setTransactions(res.data))
       .catch(err => console.error(err));
   }, [])

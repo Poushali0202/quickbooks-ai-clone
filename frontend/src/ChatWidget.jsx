@@ -21,7 +21,7 @@ export default function ChatWidget() {
 
     try {
       // Send to FastAPI backend
-      const res = await axios.post('http://localhost:8000/api/chat', { message: input });
+      const res = await axios.post('https://quickbooks-ai-clone.onrender.com/api/chat', { message: input });
       setMessages(prev => [...prev, { sender: 'ai', text: res.data.response }]);
     } catch (err) {
       setMessages(prev => [...prev, { sender: 'ai', text: 'Sorry, I encountered an error connecting to the backend.' }]);
